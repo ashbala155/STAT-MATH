@@ -1,0 +1,325 @@
+---
+title: "Linear Regression"
+author: | 
+    | Fall 2022, MATH8050: Homework 4
+    | **Ashwini Balasubramanian(C31547239), Section 001**
+date: "Due September 28, 12:00 PM noon"
+output: 
+     pdf_document:
+      includes: 
+          in_header: custom2.tex
+font-size: 12pts
+urlcolor: blue
+keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=TRUE, include=TRUE, results="hide"}
+# load packages 
+
+library(ggplot2)
+library(stats)
+library(reshape2)
+library(cowplot)
+
+sessionInfo()
+```
+
+# Question 1a
+
+$$N(x |  \theta, l^{-1}) =\sqrt{\frac{l}{2\pi}}exp(-\frac{1}{2})l(x-\theta)^2$$
+
+\[\propto exp (-\frac{1}{2}l(x^2-2x\theta + \theta^2))\]
+\[\propto exp(lx\theta -\frac{1}{2}l\theta^2)\]
+w.r.t $\theta$ that's why we get the above value
+
+
+\[p(\theta | x_{1:n}) \propto p(\theta)p(x_{1:n} | \theta)\]
+$$=1\prod_{i = 1}^{n}N(x_i | \theta, \lambda^{-1})$$
+\[=\exp(\lambda\sum(x_i)\theta -\frac{1}{2}n\lambda\theta^2)\]
+
+
+# Question 1b
+
+$$N(x |  \theta, l^{-1}) = \sqrt{\frac{l}{2\pi}} exp (-\frac{1}{2})l(x-\theta)^2$$
+
+\[\propto exp (-\frac{1}{2}l(x^2-2x\theta + \theta^2))\]
+\[\propto exp(lx\theta -\frac{1}{2}l\theta^2)\]
+
+Due to symmetry of the normal p.d.f.,
+$$N(\theta | \mu_0, \lambda_0^{-1}) = N(\mu_0 | \theta, \lambda_0^{-1}) \propto exp(\lambda_0\mu_0\theta - \frac{1}{2}\lambda_0\theta^2)$$
+
+by $exp(lx\theta -\frac{1}{2}l\theta^2)$ with $x = \mu_0$ and $l = \lambda_0$. Therefore, defining L and M as above,
+
+\[p(\theta | x_{1:n}) \propto p(\theta)p(x_{1:n} | \theta)\]
+$$=N(\theta|\mu_0, \lambda_0^{-1})\prod_{i = 1}^{n}N(x_i | \theta, \lambda^{-1})$$
+
+\[\propto exp(\lambda_0\mu_0\theta - \frac{1}{2}\lambda_0\theta^2)exp(\lambda)(\sum(x_i)\theta -\frac{1}{2}n\lambda\theta^2)\]
+
+\[=exp((\lambda_0\mu_0 + \lambda\sum x_i)\theta - \frac{1}{2}(\lambda_0 +n\lambda)\theta^2)\]
+
+\[=exp(LM\theta) - \frac{1}{2}L\theta^2\]
+\[\propto N(M | \theta, L^{-1}) = N(\theta | M, L^{-1})\] where \[ L= \lambda_0+n\lambda\] and \[M =\frac{\lambda_0 \mu_0 +\lambda\Sigma_{i=1}^{n}x_i}{\lambda_0+n\lambda} \]
+
+# Question 1c
+
+MLE for $\mu$:
+
+\[\frac{\partial}{\partial\mu} loglikelihood = - \frac{1}{2}\lambda \sum_{i = 1}^{n} 2(x_i - \mu)(-1)\] 
+\[= \lambda \sum_{i=1}^{n}(x_i)-\mu = 0\]
+\[= \sum_{i=1}^{n}(x_i - \mu)=0\]
+\[= \sum_{i=1}^{n}x_i-n\mu=0\]
+\[=> \mu = \frac{\sum_{i=1}^{n}x_i}{n}\]
+
+MLE for $\lambda$:
+
+\[ \frac{\partial}{\partial\lambda}(\frac{n}{2\pi}ln(\frac{\lambda}{2\pi}) - \frac{1}{2}\lambda(x_i - \mu)^2)=0\]
+\[\frac{n}{2}\frac{\frac{1}{2\pi}}{\frac{\lambda}{2\pi}} = \frac{1}{2}\sum(x_i - \mu)^2\]
+\[\lambda = \frac{n}{\sum(x_i - \mu)^2}\]
+\[\lambda = \frac{1}{\frac{\sum(x_i - \mu)^2}{n}}\]
+
+
+
+```{r warning=FALSE}
+library(ggplot2)
+set.seed(123)
+rand1<-rnorm(100, mean=0, sd=3)
+lambda_max<-1/var(rand1)
+mean_max<-mean(rand1)
+lambda_max
+mean_max
+func1<-function(mean_value,lambda){
+s<-0
+for (variable in rand1) {
+  c<-(variable-mean_value)**2
+  s<-s+c
+}
+log_lhood<-(50)*log(lambda/(2*3.14))-((1/2)*(lambda)*s)
+return(log_lhood)
+}
+
+lambda<-seq(0,0.5,length=100)
+mean_value<-seq(0,1,length=100)
+
+z<-func1(mean_value,lambda)
+total<-data.frame(lambda=lambda,mean_value=mean_value,z=z)
+
+ggplot(total,aes(mean_value,lambda,z=z))+geom_density_2d()+
+  geom_point(x=mean_max,y=lambda_max) + annotate("text", x = mean_max, y = lambda_max, 
+label = expression(group("(",list(theta[max] , lambda[max]),")")))
+```
+
+# Question 1d
+
+```{r}
+func_posuni<-function(mean_value,lambda){
+posterior_uniform<-exp(lambda*sum(rand1)*mean_value-length(rand1)*((mean_value)**2))
+return(posterior_uniform)
+}
+
+func_posnorm<-function(mean_value,lambda,lambda_0){
+mean_0=0
+L<-lambda_0+length(rand1)*lambda
+M<-(lambda_0*mean_0+lambda*sum(rand1))/(L)
+posterior_normal<-exp(L*M*mean_value - 0.5*L*(mean_value**2))
+}
+
+func_2<-function(mean_value,lambda){
+final<-0
+for (variable in rand1) {
+  c<-(variable-mean_value)**2
+  final<-final+c
+}
+
+likelihood<-((sqrt(lambda/2*3.14))**length(rand1))*exp(-0.5*lambda*final)
+
+
+return(likelihood)
+}
+
+lambda_0<-0.1
+
+
+likelihood_values_total<-func_2(mean_value,lambda)
+pn<-func_posnorm(mean_value,lambda,lambda_0 = 0.1)
+pn2<-func_posnorm(mean_value,lambda,lambda_0 = 100)
+pu<-func_posuni(mean_value = mean_value,lambda = lambda)
+id<-0:99
+final_data<-data.frame(likelihood = likelihood_values_total,posterior_uniform=pu,posterior_normal=pn,
+                posterior_normal_2=pn2,mean_value=mean_value)
+
+library(reshape2)
+d_12 <- melt(final_data, id.vars="mean_value")
+
+
+ggplot(data=d_12,aes(x=mean_value,y=value,col=variable))+geom_line()
+
+```
+
+
+# Question 2a
+
+
+Hypotheses:
+Null Hypothesis, $$H_0 : \mu = 0.12$$
+Alternate Hypothesis, $$H_1 : \mu > 0.12$$
+
+# Question 2b
+
+Rejection Region:
+
+Reject $H_0$ if $z >= z_{\alpha}$ 
+Since $\alpha = 0.01$, from the z table we can get $z_{0.01} = 2.33 $
+Therefore rejection region is:
+Reject $H_0$ if $z >= 2.33$
+
+# Question 2c
+
+
+Hypothesis testing:
+
+Hypotheses:
+Null Hypothesis, $H_0 : \mu = 0.12$
+Alternate Hypothesis, $H_1 : \mu > 0.12$
+
+Test Statistic:
+
+$$
+z_{obs} = \frac{\overline{y}-\mu_0}{s/\sqrt{n}}
+$$
+In the problem, we have 
+$$\overline{y} = 0.135 $$
+$$s = 0.03 $$
+$$\mu_0 = 0.12 $$ 
+$$n = 30 $$
+Substituting this on the above formule we get the test statistic 
+$$
+z_{obs} = \frac{0.135-0.12}{0.03/\sqrt{30}} = 2.74 
+$$
+
+Rejection Region:
+$$ z_{obs} = 2.74 > z_{\alpha=0.01} = 2.33
+$$
+Therefore we reject H_0.
+
+
+This means that there is sufficient evidence to conclude the alternate hypothesis that mean ozone levels in air currents over New England exceeds the federal ozone standard of 0.12 ppm.
+
+# Question 2d
+
+
+p-value = $p(z>=z_{obs}) = p(z >= 2.74) = 1 - p(z<2.74) = 1 - 0.9969 = 0.0031$
+
+Because p-value $p = 0.0031 < \alpha = 0.01$ we reject the null hypothesis $H_0$. This is consistent with our result in part c.
+
+# Question 2e
+
+Assumptions concerning the distribution of the random variable X, ozone level in
+the air:
+
+1. The data is continuous and not discrete
+2. The data is a simple random sample 
+3. The data in the population is normally distributed
+4. The population standard deviation is known
+
+
+# Question 3a
+
+```{r}
+library(mlbench)
+data(BostonHousing)
+data_frame = BostonHousing
+model1 = lm(crim ~ .,data = data_frame)
+lm.betas <- model1$coefficients
+summary(model1)
+```
+
+The predictors that can be rejected for $H_0 : \beta_j=0$ at $\alpha=0.05$ are zn, dis, rad, b, medv  
+Null hypothesis can be rejected for features whose Pr(>|t|) < 0.05. So from the above table we can reject null hypothesis for zn, dis, rad, b, medv.
+
+# Question 3b
+
+
+```{r}
+y <- data_frame$crim
+X <- as.matrix(data_frame[-1])
+int <- rep(1, length(y))
+X <- cbind(int, X)
+X <- matrix(as.numeric(X),ncol = ncol(X))
+my.lm <- function(y,X){
+betas <- solve(t(X) %*% X) %*% t(X) %*% y
+return (betas)
+}
+my.lm(y,X)
+```
+
+```{r}
+#Comparision
+results <- data.frame(our.results=my.lm(y,X), lm.results=lm.betas)
+print(results)
+
+#MSE
+beta = my.lm(y,X)
+int <- rep(1, length(y))
+pred   = X %*% beta
+MSE_own = mean((y - pred)^2)
+MSE_lm = mean(model1$residuals^2)
+results_mse <- data.frame(our.result=MSE_own, lm.result=MSE_lm)
+print(results_mse)
+```
+
+
+# Question 3c
+
+```{r}
+train = tail(data_frame,-10)
+test = head(data_frame,10)
+ytrain = train$crim
+ytest = test$crim
+
+
+Xtest =  as.matrix(test[-1])
+int2 = rep(1, length(ytest))
+Xtest = cbind(int2,Xtest)
+Xtest <- matrix(as.numeric(Xtest),ncol = ncol(Xtest))
+xtest = head(Xtest, 1)
+
+Xtrain =  as.matrix(train[-1])
+int2 = rep(1, length(ytrain))
+Xtrain = cbind(int2,Xtrain)
+Xtrain = matrix(as.numeric(Xtrain),ncol = ncol(Xtrain))
+```
+
+```{r}
+my.predict <- function(Xtrain, ytrain, Xtest){
+  n = length(ytrain)
+  p = ncol(Xtest)
+  beta = my.lm(ytrain,Xtrain)
+  y.fitted =  Xtrain %*% beta
+  pred.y =  Xtest%*%beta
+  return(pred.y)
+}
+predTest = my.predict(Xtrain, ytrain,Xtest)
+RMSE = sqrt((1/10)*sum((predTest - ytest)^2))
+print(RMSE)
+```
+
+# Question 3d
+```{r}
+summary(model1)
+
+```
+Pvalue is less than significance value 0.05. Thus, the null hypothesis that a model with no independent variables would adequately describe the data can be rejected. We conclude that independent variables help models fit better.
+
+# Question 3e
+```{r}
+model2 = lm(crim ~ zn+dis+rad+b+medv,data = data_frame)
+summary(model2)
+anova(model1,model2)
+```
+The F-statistic is 1.6599 and the pvalue is 0.1507. pvalue is greater that significance level 0.05 so we accept the null hypothesis for the partial F test that coefficients of the features of reduced model are 0.
+
+

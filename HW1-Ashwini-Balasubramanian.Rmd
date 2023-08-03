@@ -1,0 +1,329 @@
+---
+title: 'S2208 MATH8050 Data Analysis: Homework 1 Due on September 7, 2022'
+author: "Ashwini Balasubramanian, C31547239"
+date: "2022-09-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Load Packages
+```{r include=FALSE}
+sessionInfo()
+```
+
+# 1. WORKING WITH DATA  ---------------------------------------------
+
+## Question 1a
+Load the data set into R and make it a data frame called rain.df. What command did you use?
+
+## ANSWER
+```{r}
+rain.df <- read.table("rnf6080.dat")
+```
+
+## Question 1b
+How many rows and columns does rain.df have? How do you know?
+
+## ANSWER
+We use nrow and ncol to find the number of rows and columns
+
+```{r}
+nrow(rain.df)
+ncol(rain.df)
+```
+Thus the number of rows are 5070 and the number of columns 27
+
+## Question 1c
+What command would you use to get the names of the columns of rain.df? What are those names?
+
+## ANSWER
+```{r}
+colnames(rain.df)
+```
+
+## Question 1d
+What command would you use to get the value at row 2, column 4? What is the value?
+
+## ANSWER
+We use the following command to get the value: 
+```{r}
+rain.df [2,4]
+```
+According to the output, the value is 0
+
+## Question 1e
+What command would you use to display the whole second row? What is the content of that row?
+
+## ANSWER
+The following command is used to display the second row.
+```{r}
+rain.df[2,]
+```
+The above are the contents of the second row
+
+## Question 1f
+What does the following command do?
+## ANSWER:
+```{r}
+names(rain.df) <- c("year","month","day",seq(0,23))
+head(rain.df)
+tail(rain.df)
+rain.df[20,]
+```
+This function renamed the first 3 columns of the table to “year”, “month”, and “day”. We can see that the last 24 columns represent hours in the day.
+
+## Quesion 1g
+Create a new column called daily, which is the sum of the 24 hourly columns.
+
+## ANSWER
+```{r}
+   rain.df$daily <- apply(rain.df[,c(4:27)], 1, function(x) sum(x))
+```
+
+## Question 1h
+Give the command you would use to create a histogram of the daily rainfall amounts. Please make sure to attach your figures in your .pdf report.
+
+## ANSWER
+```{r}
+hist(rain.df[,28], breaks = 25,xlab = "Rain(inches)" , main = "Rainfall")
+```
+
+## Question 1i
+Explain why that histogram above cannot possibly be right.
+##ANSWER
+The problem with the above histogram is that it is incorrect to have negative rain
+
+## Question 1j
+Give the command you would use to fix the data frame.
+##ANSWER
+To fix that issue you would copy the current dataframe to a new one and then use: is.na(rain.df.new) <- rain.df.new < 0
+
+## Question 1k
+Create a corrected histogram and again include it as part of your submitted report. Explain why it is more reasonable than the previous histogram.
+
+## ANSWER
+```{r}
+rain.df.new <- rain.df
+is.na(rain.df.new) <- rain.df.new < 0
+hist(rain.df.new[,28], breaks = 25, xlab = "Rain(inches)" , main = "Rainfall")
+```
+This new histogram is more reasonable since it doesnt show any negative rain
+
+
+# 2. DATA TYPES -----------------------------------------------------
+
+## For each of the following commands, either explain why they should be errors, or explain the non- erroneous result.
+
+## Question 2a
+
+```{r error=TRUE}
+x <- c("5","12","7")
+    max(x)
+    sort(x)
+    sum(x)
+```
+
+## ANSWER
+For max(),R is perceiving the numbers as characters because they were all placed in quotation marks. Therefore, max(vector1) is lexicographically ranking them making 7 the greatest number.
+Each value was sorted using sort() according to the first character. It is therefore 12,5,7. The quotations would need to be eliminated, converting them to integers, if the user desired them sorted from least to greatest.
+You cannot sum characters, therefore sum() shows an error. For values, the sum() function is effective. If vector1 <- c(5,12,7) then sum(vector1) gives us 24.
+
+## Question 2b
+
+```{r error=TRUE}
+y <- c("5",7,12)
+y[2]+y[3]
+```
+
+## ANSWER
+Because it interprets 7 and 12 like characters, vector2[2] + vector2[3] contains an error. Characters and integers cannot both be in the same array. The "integers" thus become characters.
+
+## Question 2c
+```{r error=TRUE}
+z <- data.frame(z1="5",z2=7,z3=12)
+    z[1,2] + z[1,3]
+```
+## ANSWER
+z <- data.frame(z1="5",z2=7,z3=12) creates a table with 3 columns and 1 row. There are "5", 7, and 12 columns.In the table, 7 and 12 are treated as integers. z[1,2] + z[1,3] = 19 because the table allows 7 and 12 to be treated as integers.
+
+# LINEAR ALGEBRA-----------------------------------------------------
+
+## Question 3a
+Write an R function called my_solver() such that given inputs A and b, the function my_solver() returns the solution of the linear system, i.e., X <- my_solver(A, b).
+
+## ANSWER
+```{r}
+mysolver <- function(A, b) {
+  X <- solve(A,b)
+  return(X)
+}
+```
+
+## Question 3b
+Run the following code to get A and b. Then use your function my_solver() to produce the answer and verify your solution.
+
+## ANSWER
+```{r}
+n = 100 
+set.seed(123)
+A = rWishart(1, 150, diag(n))[ , ,1]
+b = rnorm(n,1)
+mysolver(A, b)
+A %*% mysolver(A, b)
+b
+```
+
+# 4. WORKING WITH GGPLOT---------------------------------------------
+
+## Question 4a
+Read the data file “AQSdata.csv” into R.
+
+## ANSWER
+```{r}
+data1 <- read.csv(file="AQSdata.csv")
+colnames(data1)
+```
+
+## Question 4b
+Generate density plots of PM2.5 concentrations grouped by County in one single panel, where each density should have its own color. What do you find from the figure?
+
+## ANSWER
+```{r}
+library(ggplot2)
+p <- ggplot(data1, aes(x=Daily.Mean.PM2.5.Concentration, color=COUNTY)) + geom_density() + theme(text = element_text(size = 14))     
+p
+```
+From the above plot we can find that Chesterfield has the highest density of PM2.5 particle concentration which means there's most pollution in Chesterfield.
+
+## Question 4c
+Plot histograms of PM2.5 concentrations across different counties with one panel for one histogram.
+
+## ANSWER
+```{r}
+ggplot(data1, aes(x=Daily.Mean.PM2.5.Concentration, color=COUNTY)) + geom_histogram() + facet_wrap(COUNTY ~ .) + theme(text = element_text(size = 14))
+```
+## Question 4d
+Generate boxplots of PM2.5 concentrations by County. What would you say about the distributions?
+
+## ANSWER
+```{r}
+ggplot(data1, aes(x= COUNTY, y= Daily.Mean.PM2.5.Concentration, color = COUNTY)) + geom_boxplot() + theme(text = element_text(size = 14))
+```
+From this boxplot we can infer that the medians of all counties are very close. The InterQuartile Range of Greenville and Lexington are higher than other counties. 
+
+## Question 4e
+Reorder the boxplots above by the median value of PM2.5 concentrations.
+
+## ANSWER
+```{r}
+ggplot(data1, aes(x= reorder(COUNTY, Daily.Mean.PM2.5.Concentration, FUN = median), y= Daily.Mean.PM2.5.Concentration, color = COUNTY)) + geom_boxplot() + xlab("COUNTY") + theme(text = element_text(size = 14))
+```
+
+## Question 4f
+Converting the Site ID to a factor and plot the histogram grouped by Site ID. The range of Spartanburg is greatest if we include the outliers from the boxplot.
+
+## ANSWER
+```{r}
+data1[,"Site.ID"] <- as.factor(as.numeric(data1[, "Site.ID"]))
+ggplot(data1, aes(x= Daily.Mean.PM2.5.Concentration, color = Site.ID)) + geom_histogram() + theme(text = element_text(size = 14))
+```
+## Question 4g
+Generate the time series plot for the monitoring Site ID 450190048.
+
+## ANSWER
+```{r}
+library(tidyverse)
+data2=read.csv("AQSdata.csv")
+##data2[,"Site.ID"] <- as.factor(as.numeric(data2[, "Site.ID"]))
+data2$Date<-as.Date(data2$Date,format="%m/%d/%Y")
+ggplot(filter(data2,Site.ID=="450190048"), aes(Date,Daily.Mean.PM2.5.Concentration)) + geom_line() + theme(text = element_text(size = 14))
+```
+
+## Question 4h
+Plot time series of PM2.5 concentrations for all monitoring sites in one panel, where each site has its own color
+
+## ANSWER
+```{r}
+data1$Date<-as.Date(data1$Date,format="%m/%d/%Y")
+ggplot(data1, aes(Date,Daily.Mean.PM2.5.Concentration,color=Site.ID))+geom_line() + theme(text = element_text(size = 14))
+```
+## Question 4i
+Plot time series of PM2.5 concentrations across all monitoring sites in multiple panels, where one panel only has one site, and each row only has two panels.
+
+## ANSWER
+```{r}
+ggplot(data1, aes(x= Date, y=Daily.Mean.PM2.5.Concentration, col = Site.ID, group = 1)) + geom_line() + facet_wrap(. ~ Site.Name, ncol = 2) + theme(text = element_text(size = 14)) 
+```
+## Question 4j
+In the time series plot, there seems to be not enough space to hold the x-axis labels. One way to avoid this is to rotate the axis labels. Please rotate all the time labels 45 degree.
+
+## ANSWER
+```{r}
+ggplot(data2, aes(x=Date, y=Daily.Mean.PM2.5.Concentration, col=Site.Name, group = 1)) + geom_line() + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + theme(text = element_text(size = 14))
+ggplot(data2, aes(x=Date, y=Daily.Mean.PM2.5.Concentration, col=Site.Name, group = 1)) + geom_line() + facet_wrap(. ~ Site.Name, ncol=2 ) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + theme(text = element_text(size = 14))
+```
+
+# WORKING WITH DPLYR-------------------------------------------------
+
+## Question 5a
+Filter all the observations in the county Greenville. How many observations are there?
+
+## ANSWER
+```{r}
+library(dplyr)
+nrow(filter(data1,COUNTY == "Greenville"))
+```
+There are 937 observations.
+
+## Question 5b
+Filter all the observations in Greenville in August 2021
+
+## ANSWER
+```{r}
+data3 <- read.csv(file="AQSdata.csv")
+filter(data3,COUNTY == "Greenville" & Date > "07/31/2021" & Date < "09/01/2021")
+```
+
+## Question 5c
+Filter all the observations in Greenville in August 2021 and select the variables PM2.5 concentrations, Date, latitude and longitude of sites
+
+## ANSWER
+```{r}
+  select(filter(data3, COUNTY == "Greenville" & Date > "07/31/2021" & Date < "09/01/2021"), Daily.Mean.PM2.5.Concentration, Date, SITE_LATITUDE, SITE_LONGITUDE ) 
+```
+## Question 5d
+Generate scatter plot of PM2.5 against latitude and longitude in two different panels
+
+## ANSWER
+```{r}
+par(mfrow=c(1,2))
+plot(data1$Daily.Mean.PM2.5.Concentration~data1$SITE_LATITUDE, xlab="SITE_LATITUDE", ylab="Daily.Mean.PM2.5.Concentration")
+plot(data1$Daily.Mean.PM2.5.Concentration~data1$SITE_LONGITUDE, xlab="SITE_LONGITUDE", ylab="Daily.Mean.PM2.5.Concentration")
+
+```
+
+
+# QUESTION 6---------------------------------------------------------
+
+## Question 6a
+What is the point of reproducible code?
+
+## ANSWER
+Reproducible code helps anybody to duplicate your problem by simply copying and pasting your R code. If you give a reproducible example, you can receive new insights, novel ideas and helpful solutions for the problem you are working on. It will also help your future self to understand your current progress. When you want to recheck some of your work this feature makes it easy and quick.
+
+## Question 6b
+Given an example of why making your code reproducible is important for you to know in this class and moving forward.
+
+## ANSWER
+Suppose I'm working on a new project and I am dealing with a bug that i'm unable to figure out what went wrong, I would want to take the help of my professor or higher-ups. For them to understand my project it is imperative that my project is reproducible. I would also like to make my code reproducible so I can use it as part of any future projects in any other platform I work on.
+
+## Question 6c
+On a scale of 1 (easy) – 10 (hard), how hard was this assignment. If this assignment was hard (> 5), please state in one sentence what you struggled with.
+
+## ANSWER
+I found this assignment very hard (10) just because of the length and time it took to complete. This assignment was too long and had too many parts to it and took most of the week to complete it. This took away time I had to dedicate to my other course work and I think it should have been divided to 5 smaller assignments.
+

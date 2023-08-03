@@ -1,0 +1,234 @@
+---
+title: "Gibbs Sampling and Metropolis-Hastings Algorithm"
+author: | 
+    | Fall 2022, MATH8050: Homework 7
+    | **Ashwini Balasubramanian(C31547239), Section 001**
+date: "Due October 26, 12:00 PM noon"
+output: 
+     pdf_document:
+font-size: 12pts
+urlcolor: blue
+keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=TRUE, include=TRUE, results="hide"}
+# load packages 
+
+library(ggplot2)
+library(stats)
+library(ISLR2)
+library(AR)
+
+sessionInfo()
+```
+
+# 1a
+
+```{r}
+set.seed(134)
+f<-function(x,a=2.7,b=6.3)
+{
+  return((x^(a-1))*((1-x)^(b-1)))
+}
+```
+
+```{r}
+set.seed(134)
+n=10^4
+stored<-rep(NA,n)
+accept.count=0
+accepted<-rep(NA,n)
+while(TRUE){
+  previous=rbeta(1,2,6)
+  if(previous>=0.1 && previous<=0.9)
+  {
+    break;
+  }
+}
+for(i in 1:n)
+{
+  while(TRUE){
+    present_value=rbeta(1,2,6)
+    if(present_value>=0.1 && present_value<=0.9)
+    {
+      break;
+    }
+  }
+  
+  ratio=min(1,(f(present_value)/dbeta(present_value,2,6))/(f(previous)/dbeta(previous,2,6)))
+  accept=runif(1) < ratio
+  stored[i]<-ifelse(accept,present_value,previous)
+  previous=stored[i]
+  if(accept)
+  {
+    accepted[i]=present_value
+  }
+}
+
+plot(stored[2000:n],type='l')
+```
+
+
+```{r}
+hist(stored[2000:n],main="")
+```
+```{r}
+acceptance=length(!accepted[!is.na(accepted)])/n
+acceptance
+```
+
+# 1b
+```{r}
+n = 10^4
+stored <- rep(NA, n)
+accept.count=0
+accepted1<-rep(NA,n)
+previous=runif(1,0.1,0.9)
+for(i in 1:n){
+  present_value = runif(1,0.1,0.9)
+  ratio <- min(1, (f(present_value)/1) / (f(previous)/1))
+  accept <- runif(1) < ratio
+  stored[i] <- ifelse(accept, present_value, previous)
+  previous <- stored[i]
+  
+  if(accept){
+    accepted1[i] <- present_value
+  }
+}
+
+plot(stored[2000:n], type='l')
+```
+
+```{r}
+hist(stored[2000:n],main="")
+```
+```{r}
+acceptance1=length(!accepted1[!is.na(accepted1)])/n
+acceptance1
+```
+
+
+# 1c
+
+```{r}
+length(accepted[accepted>0.5])/length(accepted)
+```
+Therefore, $P(X>0.5) = 0.5629$
+
+```{r}
+length(accepted1[accepted1>0.5])/length(accepted1)
+```
+Therefore, $P(X>0.5) = 0.5617$
+
+# 2a
+
+```{r}
+v<-function(v1,x){
+ val<-gamma((v1+1)/2)/(gamma(v1/2))
+ val2<-1/sqrt(v1*pi)
+ val3<-(1+(x^2)/v1)^(-(v1+1)/2)
+ final<-val*val2*val3
+ return(final)
+}
+```
+```{r}
+n=10^4
+stored<-rep(NA,n)
+accept.count=0
+accepted2<-rep(NA,n)
+previous=rnorm(1)
+for (i in 1:n)
+{
+present_value=rnorm(1)
+ ratio=min(1,(v(4,present_value)/dnorm(present_value))/
+              (v(4,previous)/dnorm(previous)))
+  accept=runif(1) < ratio
+  stored[i]<-ifelse(accept,present_value,previous)
+  previous=stored[i]
+  if(accept)
+  {
+  accepted2[i]=present_value
+  }
+}
+  plot(stored[2000:n], type='l')
+```
+```{r}
+hist(stored[2000:n],40,main= "Width 2000 values")
+```
+
+# 2b
+
+```{r}
+n=3000
+stored<-rep(NA,n)
+accept.count=0
+accepted3 <- rep(NA,n)
+previous=rt(1,2)
+for (i in 1:n){
+  present_value=rt(1,2)
+  ratio=min(1,(v(4,present_value)/v(2,present_value))/ (v(4,previous)/v(2,previous)))
+  accept = runif(1) < ratio
+  stored[i]<-ifelse(accept,present_value,previous)
+  previous=stored[i]
+  if(accept){
+    accepted3[i]=present_value
+  }
+}
+plot(stored, type = 'l')
+```
+
+```{r}
+hist(stored,50,main="")
+```
+
+# 2c
+
+Credible interval for (a)
+
+```{r}
+x <- accepted2[!is.na(accepted2)]
+quantile(x,probs=c(0.025,0.975))
+```
+
+Credible interval for (b)
+
+```{r}
+x2 <- accepted3[!is.na(accepted3)]
+quantile(x,probs=c(0.025,0.975))
+```
+
+```{r}
+mean(x)
+```
+```{r}
+mean(x2)
+```
+
+```{r}
+n=3000
+stored<-rep(NA,n)
+accept.count=0
+accepted3<-rep(NA,n)
+
+previous=rt(1,2)
+for (i in 1:n)
+{
+present_value=rt(1,2)
+  ratio=min(1,dt(present_value,4,log = TRUE)+dt(previous,2,log=T)-
+              dt(present_value,2,log = TRUE)-dt(previous,4,log=T))
+  accept=log(runif(1)) < ratio
+  stored[i]<-ifelse(accept, present_value,previous)
+  previous=stored[i]
+  if(accept)
+  {
+  accepted3[i]=present_value
+  }
+}
+plot(stored,type='l')
+```
+
+
